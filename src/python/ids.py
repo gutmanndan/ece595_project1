@@ -96,8 +96,8 @@ class IDS:
             # Your code goes here. 
             cumsum=0
             for i in range(1,self.N):
-                cumsum += a[i] - (a[0]+(i-1) * prev_mu_T_sec)
-            curr_avg_offset_us = (cumsum/(self.N-1))/10**-6
+                cumsum += a[i] - (a[0] + (i) * prev_mu_T_sec)
+            curr_avg_offset_us = (cumsum/(self.N-1)) * 10e6
 
             curr_acc_offset_us = prev_acc_offset_us + np.abs(curr_avg_offset_us)
             
@@ -109,14 +109,10 @@ class IDS:
 
             # Your code goes here. 
 
-            curr_avg_offset_us = self.T_sec - ((a[self.N] - a0) / self.N)
+            curr_avg_offset_us = (self.T_sec - ((a[self.N-1] - a0) / self.N)) * 10e6
             curr_acc_offset_us = prev_acc_offset_us + (self.N * curr_avg_offset_us)
 
             # ====================== End of Your Code =========================
-
-        #udpate acc_offset and history
-        self.acc_offset_us = curr_acc_offset_us
-        self.acc_offset_us_hist.append(self.acc_offset_us)
 
         return curr_avg_offset_us, curr_acc_offset_us
 
@@ -144,6 +140,10 @@ class IDS:
         # TODO: Implement the RLS algorithm
 
         # Your code goes here. 
+        l = 0.9995 #forgetting factor
+        Gain = 1/l *prev_P * time_elapsed_sec / (1 + 1/l * time_elapsed_sec**2 * prev_P)
+        curr_P = 1/l * (prev_P - (Gain * time_elapsed_sec * prev_P))
+        curr_skew = prev_skew + (Gain * curr_error)
 
         # ====================== End of Your Code =========================
 
@@ -180,6 +180,10 @@ class IDS:
         # Store the normalized error in `normalized_error`
 
         # Your code goes here. 
+        normalized_error = (curr_error_sample - mu_e) / sigma_e
+
+        curr_L_upper = prev_L_upper + normalized_error - kappa
+        curr_L_lower = prev_L_lower - normalized_error - kappa
         
         # ====================== End of Your Code =========================
 

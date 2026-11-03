@@ -17,8 +17,13 @@ def plot_acc_offsets(ids, mode):
     if mode == 'state-of-the-art':
         # ====================== Start of Your Code =========================
         # Example: Plot accumulated offset curve for 0x184.
-        #   plt.plot(ids['184-sota'].elapsed_time_sec_hist, ids['184-sota'].acc_offset_us_hist, label='0x184')
-
+        plt.plot(ids['184-sota'].elapsed_time_sec_hist, ids['184-sota'].acc_offset_us_hist, label='0x184')
+        plt.plot(ids['3d1-sota'].elapsed_time_sec_hist, ids['3d1-sota'].acc_offset_us_hist, label='0x3d1')
+        plt.plot(ids['180-sota'].elapsed_time_sec_hist, ids['180-sota'].acc_offset_us_hist, label='0x180')
+        plt.xlabel('Sample Number')
+        plt.ylabel('Offset Accumulation ($\mu$s)')
+        plt.title('Offset Accumulation for State of the Art')
+        plt.show()
         # Your code goes here.
 
         # ====================== End of Your Code =========================
@@ -26,9 +31,15 @@ def plot_acc_offsets(ids, mode):
         # ====================== Start of Your Code =========================
 
         # Your code goes here
-
+        plt.plot(ids['184-ntp'].elapsed_time_sec_hist, ids['184-ntp'].acc_offset_us_hist, label='0x184-ntp')
+        plt.plot(ids['3d1-ntp'].elapsed_time_sec_hist, ids['3d1-ntp'].acc_offset_us_hist, label='0x3d1-ntp')
+        plt.plot(ids['180-ntp'].elapsed_time_sec_hist, ids['180-ntp'].acc_offset_us_hist, label='0x180-ntp')
+        plt.xlabel('Sample Number')
+        plt.ylabel('Offset Accumulation ($\mu$s)')
+        plt.title('Offset Accumulation for NTP')
+        plt.show()
         # ====================== End of Your Code =========================
-
+    
 
 # TODO: Implement this simulation (N=20)
 def simulation_masquerade_attack(mode):
@@ -65,6 +76,7 @@ def simulation_masquerade_attack(mode):
         # ====================== Start of Your Code =========================
         
         # Your code goes here.
+        pass
         
         # ====================== End of Your Code  =========================
 
@@ -75,6 +87,7 @@ def simulation_cloaking_attack(mode):
         # ====================== Start of Your Code =========================
         
         # Your code goes here.
+        pass
 
         # ====================== End of Your Code =========================
 
@@ -82,6 +95,7 @@ def simulation_cloaking_attack(mode):
         # ====================== Start of Your Code =========================
         
         # Your code goes here.
+        pass
 
         # ====================== End of Your Code =========================
 
@@ -136,8 +150,8 @@ if __name__ == '__main__':
     plot_acc_offsets(ids, "ntp-based")
 
     # Task 4: Change N to 30, and repeat Tasks 2 and 3.
-    # plot_acc_offsets(ids, "state-of-the-art")
-    # plot_acc_offsets(ids, "ntp-based")
+    #plot_acc_offsets(ids, "state-of-the-art")
+    #plot_acc_offsets(ids, "ntp-based")
 
     # Task 5: Simulate the masquerade attack, and plot upper/lower control limits.
     simulation_masquerade_attack("state-of-the-art")
