@@ -21,7 +21,7 @@ def plot_acc_offsets(ids, mode):
         plt.plot(ids['3d1-sota'].elapsed_time_sec_hist, ids['3d1-sota'].acc_offset_us_hist, label='0x3d1')
         plt.plot(ids['180-sota'].elapsed_time_sec_hist, ids['180-sota'].acc_offset_us_hist, label='0x180')
         plt.xlabel('Sample Number')
-        plt.ylabel('Offset Accumulation ($\mu$s)')
+        plt.ylabel(r'Offset Accumulation ($\mu$s)')
         plt.title('Offset Accumulation for State of the Art')
         plt.show()
         # Your code goes here.
@@ -35,7 +35,7 @@ def plot_acc_offsets(ids, mode):
         plt.plot(ids['3d1-ntp'].elapsed_time_sec_hist, ids['3d1-ntp'].acc_offset_us_hist, label='0x3d1-ntp')
         plt.plot(ids['180-ntp'].elapsed_time_sec_hist, ids['180-ntp'].acc_offset_us_hist, label='0x180-ntp')
         plt.xlabel('Sample Number')
-        plt.ylabel('Offset Accumulation ($\mu$s)')
+        plt.ylabel(r'Offset Accumulation ($\mu$s)')
         plt.title('Offset Accumulation for NTP')
         plt.show()
         # ====================== End of Your Code =========================
