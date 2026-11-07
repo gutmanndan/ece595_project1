@@ -39,62 +39,80 @@ def plot_acc_offsets(ids, mode):
     # ====================== End of Your Code =========================
 
 
+def run_attack_simulation(attack_file, mode, N=20, batch_num_each=1000):
+    """
+    Feed `batch_num_each` batches of legitimate 0x184 timestamps to the IDS, followed by
+    `batch_num_each` batches of timestamps of the attacker's message (`attack_file`).
+    The attack therefore starts at batch (batch_num_each + 1). Returns the IDS instance.
+    """
+    data_184 = import_data('../data/184.txt')
+    data_atk = import_data(attack_file)
+
+    data_184 = np.asarray(data_184[0:batch_num_each * N]) - data_184[0]  # Relative timestamps
+    data_atk = np.asarray(data_atk[0:batch_num_each * N]) - data_atk[0]  # Relative timestamps
+    data = np.append(data_184, data_184[-1] + 0.1 + data_atk)  # The 1st spoofed message occurs exactly 0.1 sec
+                                                               # (the period) after the last legitimate message.
+
+    ids = IDS(T_sec=0.1, N=N, mode=mode)
+    for i in range(2 * batch_num_each):
+        batch = np.asarray(data[i * N:(i + 1) * N])
+        ids.update(batch)
+    return ids
+
+
+def plot_control_limits(ids, attack_name, fname):
+    title = 'State-of-the-Art IDS' if ids.mode == 'state-of-the-art' else 'NTP-Based IDS'
+    # L_upper_hist / L_lower_hist start once CUSUM is initialized (batch k_CUSUM_start + 1)
+    batches = np.arange(len(ids.L_upper_hist)) + ids.k_CUSUM_start + 1
+
+    plt.figure()
+    plt.plot(batches, ids.L_upper_hist, label='Upper Control Limit')
+    plt.plot(batches, ids.L_lower_hist, label='Lower Control Limit')
+    plt.axhline(ids.Gamma, color='r', linestyle='--', linewidth=1, label=r'Threshold $\Gamma$ = %d' % ids.Gamma)
+    plt.axvline(1001, color='gray', linestyle=':', linewidth=1, label='Attack starts (batch 1001)')
+    plt.xlabel('Number of Batches')
+    plt.ylabel('Control Limits')
+    plt.title('Control Limits, %s, %s' % (attack_name, title))
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.savefig('../../plots/%s.png' % fname, dpi=150, bbox_inches='tight')
+    plt.show()
+
+    print('%-20s %-17s detected = %-5s  max L+ = %10.2f  max L- = %10.2f'
+          % (attack_name, ids.mode, bool(ids.is_detected),
+             max(ids.L_upper_hist), max(ids.L_lower_hist)))
+
+
 # TODO: Implement this simulation (N=20)
 def simulation_masquerade_attack(mode):
+    # Scenario 1: ECU A (0x184) is suspended; ECU B sends its 0x3d1 timestamps as spoofed 0x184.
     if mode == 'state-of-the-art':
-        # The following code is provided as an example.
-        data_184 = import_data('../data/184.txt')
-        data_3d1 = import_data('../data/3d1.txt')
-
-        N = 20
-
-        # Construct a new data-set with the first 1000 batches of data_184,
-        # followed by 1000 batches of data_3d1. That is, the masquerade
-        # attack occurs at the 1001-st batch.
-        data_184 = np.asarray(data_184[0:1000 * N]) - data_184[0]  # Relative timestamps
-        data_3d1 = np.asarray(data_3d1[0:1000 * N]) - data_3d1[0]  # Relative timestamps
-        data = np.append(data_184, data_184[-1] + 0.1 + data_3d1)  # The 1st spoofed message occurs exactly 0.1 sec
-                                                                   # (the period) after the last legitimate message.
-
-        ids = IDS(T_sec=0.1, N=N, mode='state-of-the-art')
-
-        batch_num = 2000
-        for i in range(batch_num):
-            batch = np.asarray(data[i * N:(i + 1) * N])
-            ids.update(batch)
-
-        plt.plot(ids.L_upper_hist, label='Upper Control Limit')
-        plt.plot(ids.L_lower_hist, label='Lower Control Limit')
-        plt.xlabel('Number of Batches')
-        plt.ylabel('Control Limits')
-        plt.title('Control Limits for State-of-the-Art IDS')
-        plt.legend()
-        plt.show()
+        ids = run_attack_simulation('../data/3d1.txt', 'state-of-the-art')
+        plot_control_limits(ids, 'Masquerade Attack', 'SOTA_masquerade')
     elif mode == 'ntp-based':
         # ====================== Start of Your Code =========================
-        
-        # Your code goes here.
-        pass
-        
+        ids = run_attack_simulation('../data/3d1.txt', 'ntp-based')
+        plot_control_limits(ids, 'Masquerade Attack', 'NTP_masquerade')
         # ====================== End of Your Code  =========================
 
 
 # TODO: Implement this simulation (N=20)
+# Scenario 2: ECU A (0x184) is suspended; ECU C sends spoofed 0x184 every (0.1 + dT) sec with
+# dT = -29 us. The cloaking is already contained in 180.txt: it was recorded on EcoCar while the
+# attacker transmitted every 99971 us (see Sec. VI of [3]), which makes the observed clock skew of
+# 0x180 (about -17.3 ppm, NTP-based) close to that of 0x184 (about -19.1 ppm). So the recorded
+# timestamps are fed directly, without adding dT again.
 def simulation_cloaking_attack(mode):
     if mode == 'state-of-the-art':
         # ====================== Start of Your Code =========================
-        
-        # Your code goes here.
-        pass
-
+        ids = run_attack_simulation('../data/180.txt', 'state-of-the-art')
+        plot_control_limits(ids, 'Cloaking Attack', 'SOTA_cloaking')
         # ====================== End of Your Code =========================
 
     elif mode == 'ntp-based':
         # ====================== Start of Your Code =========================
-        
-        # Your code goes here.
-        pass
-
+        ids = run_attack_simulation('../data/180.txt', 'ntp-based')
+        plot_control_limits(ids, 'Cloaking Attack', 'NTP_cloaking')
         # ====================== End of Your Code =========================
 
 
