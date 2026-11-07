@@ -97,7 +97,7 @@ class IDS:
             cumsum=0
             for i in range(1,self.N):
                 cumsum += a[i] - (a[0] + (i) * prev_mu_T_sec)
-            curr_avg_offset_us = (cumsum/(self.N-1)) * 10e6
+            curr_avg_offset_us = (cumsum/(self.N-1)) * 1e6
 
             curr_acc_offset_us = prev_acc_offset_us + np.abs(curr_avg_offset_us)
             
@@ -109,7 +109,7 @@ class IDS:
 
             # Your code goes here. 
 
-            curr_avg_offset_us = (self.T_sec - ((a[self.N-1] - a0) / self.N)) * 10e6
+            curr_avg_offset_us = (self.T_sec - ((a[self.N-1] - a0) / self.N)) * 1e6
             curr_acc_offset_us = prev_acc_offset_us + (self.N * curr_avg_offset_us)
 
             # ====================== End of Your Code =========================
@@ -182,8 +182,8 @@ class IDS:
         # Your code goes here. 
         normalized_error = (curr_error_sample - mu_e) / sigma_e
 
-        curr_L_upper = prev_L_upper + normalized_error - kappa
-        curr_L_lower = prev_L_lower - normalized_error - kappa
+        curr_L_upper = max(0, prev_L_upper + normalized_error - kappa)
+        curr_L_lower = max(0, prev_L_lower - normalized_error - kappa)
         
         # ====================== End of Your Code =========================
 

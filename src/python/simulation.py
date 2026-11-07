@@ -14,32 +14,30 @@ def import_data(file=None):
 
 # TODO: Plot accumulated offset curves for both state-of-the-art and NTP-based IDSs.
 def plot_acc_offsets(ids, mode):
+    # ====================== Start of Your Code =========================
     if mode == 'state-of-the-art':
-        # ====================== Start of Your Code =========================
-        # Example: Plot accumulated offset curve for 0x184.
-        plt.plot(ids['184-sota'].elapsed_time_sec_hist, ids['184-sota'].acc_offset_us_hist, label='0x184')
-        plt.plot(ids['3d1-sota'].elapsed_time_sec_hist, ids['3d1-sota'].acc_offset_us_hist, label='0x3d1')
-        plt.plot(ids['180-sota'].elapsed_time_sec_hist, ids['180-sota'].acc_offset_us_hist, label='0x180')
-        plt.xlabel('Sample Number')
-        plt.ylabel(r'Offset Accumulation ($\mu$s)')
-        plt.title('Offset Accumulation for State of the Art')
-        plt.show()
-        # Your code goes here.
-
-        # ====================== End of Your Code =========================
+        suffix, title, fname = 'sota', 'State-of-the-Art IDS', 'SOTA'
     elif mode == 'ntp-based':
-        # ====================== Start of Your Code =========================
+        suffix, title, fname = 'ntp', 'NTP-Based IDS', 'NTP'
+    else:
+        raise ValueError('Unknown IDS mode')
 
-        # Your code goes here
-        plt.plot(ids['184-ntp'].elapsed_time_sec_hist, ids['184-ntp'].acc_offset_us_hist, label='0x184-ntp')
-        plt.plot(ids['3d1-ntp'].elapsed_time_sec_hist, ids['3d1-ntp'].acc_offset_us_hist, label='0x3d1-ntp')
-        plt.plot(ids['180-ntp'].elapsed_time_sec_hist, ids['180-ntp'].acc_offset_us_hist, label='0x180-ntp')
-        plt.xlabel('Sample Number')
-        plt.ylabel(r'Offset Accumulation ($\mu$s)')
-        plt.title('Offset Accumulation for NTP')
-        plt.show()
-        # ====================== End of Your Code =========================
-    
+    N = ids['184-' + suffix].N
+    plt.figure()
+    for msg in ['184', '3d1', '180']:
+        d = ids[msg + '-' + suffix]
+        # The final RLS skew estimate is the slope of the curve (ppm = us/s)
+        plt.plot(d.elapsed_time_sec_hist, d.acc_offset_us_hist,
+                 label='0x%s (S = %.2f ppm)' % (msg, d.skew))
+    plt.xlabel('Elapsed Time (s)')
+    plt.ylabel(r'Accumulated Offset ($\mu$s)')
+    plt.title('Accumulated Offset, %s, N = %d' % (title, N))
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.savefig('../../plots/%s_offset_acc_%d.png' % (fname, N), dpi=150, bbox_inches='tight')
+    plt.show()
+    # ====================== End of Your Code =========================
+
 
 # TODO: Implement this simulation (N=20)
 def simulation_masquerade_attack(mode):
@@ -110,48 +108,35 @@ if __name__ == '__main__':
     data_3d1 = np.asarray(data_3d1) - data_3d1[0]
     data_180 = np.asarray(data_180) - data_180[0]
 
-    ids = dict()
+    # Tasks 2-4: run both IDSs on all three messages for N = 20 and N = 30.
+    for N in [20, 30]:
+        ids = dict()
+        for msg in ['184', '3d1', '180']:
+            ids[msg + '-sota'] = IDS(T_sec=0.1, N=N, mode='state-of-the-art')
+            ids[msg + '-ntp'] = IDS(T_sec=0.1, N=N, mode='ntp-based')
 
-    N = 20      # Change this to 30 for Task 4
-    ids['184-sota'] = IDS(T_sec=0.1, N=N, mode='state-of-the-art')
-    ids['184-ntp'] = IDS(T_sec=0.1, N=N, mode='ntp-based')
+        if N == 20:
+            batch_num = 6000
+        elif N == 30:
+            batch_num = 4000
+        else:
+            batch_num = 6000
 
-    ids['3d1-sota'] = IDS(T_sec=0.1, N=N, mode='state-of-the-art')
-    ids['3d1-ntp'] = IDS(T_sec=0.1, N=N, mode='ntp-based')
+        data = {'184': data_184, '3d1': data_3d1, '180': data_180}
+        for i in range(batch_num):
+            for msg in ['184', '3d1', '180']:
+                batch = data[msg][i * N:(i + 1) * N]
+                ids[msg + '-sota'].update(batch)
+                ids[msg + '-ntp'].update(batch)
 
-    ids['180-sota'] = IDS(T_sec=0.1, N=N, mode='state-of-the-art')
-    ids['180-ntp'] = IDS(T_sec=0.1, N=N, mode='ntp-based')
+        for msg in ['184', '3d1', '180']:
+            print('N=%d  0x%s  skew: SOTA = %8.3f ppm, NTP = %8.3f ppm'
+                  % (N, msg, ids[msg + '-sota'].skew, ids[msg + '-ntp'].skew))
 
-    if N == 20:
-        batch_num = 6000
-    elif N == 30:
-        batch_num = 4000
-    else:
-        batch_num = 6000
-
-    for i in range(batch_num):
-        batch_184 = data_184[i*N:(i+1)*N]
-        ids['184-sota'].update(batch_184)
-        ids['184-ntp'].update(batch_184)
-
-        batch_3d1 = data_3d1[i*N:(i+1)*N]
-        ids['3d1-sota'].update(batch_3d1)
-        ids['3d1-ntp'].update(batch_3d1)
-
-        batch_180 = data_180[i * N:(i + 1) * N]
-        ids['180-sota'].update(batch_180)
-        ids['180-ntp'].update(batch_180)
-
-
-    # Task 2: Plot accumulated offset curves for 0x184, 0x3d1, and 0x180, for the state-of-the-art IDS.
-    plot_acc_offsets(ids, "state-of-the-art")
-
-    # Task 3: Plot accumulated offset curves for 0x184, 0x3d1, and 0x180, for the NTP-based IDS.
-    plot_acc_offsets(ids, "ntp-based")
-
-    # Task 4: Change N to 30, and repeat Tasks 2 and 3.
-    #plot_acc_offsets(ids, "state-of-the-art")
-    #plot_acc_offsets(ids, "ntp-based")
+        # Task 2 (N=20) / Task 4 (N=30): state-of-the-art IDS
+        plot_acc_offsets(ids, "state-of-the-art")
+        # Task 3 (N=20) / Task 4 (N=30): NTP-based IDS
+        plot_acc_offsets(ids, "ntp-based")
 
     # Task 5: Simulate the masquerade attack, and plot upper/lower control limits.
     simulation_masquerade_attack("state-of-the-art")
